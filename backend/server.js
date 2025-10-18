@@ -1,9 +1,22 @@
 const express = require('express');
-const app = express();
-app.use(express.json()); // Cần để parse body JSON
-const userRoutes = require('./routes/user'); // Import route
-app.use('/', userRoutes); // Đăng ký route
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const mongoose = require('mongoose');
 const cors = require('cors');
-app.use(cors()); // Cho phép CORS cho tất cả các route
+const dotenv = require('dotenv');
+const userRoutes = require('./routes/user');
+
+dotenv.config();
+const app = express();
+app.use(cors()); // Cho phép frontend gọi API
+app.use(express.json()); // Parse body JSON
+
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('✅ Connected to MongoDB Atlas'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
+
+app.use('/', userRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
