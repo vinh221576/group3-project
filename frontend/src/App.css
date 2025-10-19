@@ -36,3 +36,22 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,Seg
 }
 .toast.ok{border-color:rgba(34,197,94,.4)}
 .toast.err{border-color:rgba(255,93,93,.4)}
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  background: #11161f;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  animation: fadeIn .3s ease;
+}
+.toast.ok { border-color: rgba(34,197,94,.4); }
+.toast.err { border-color: rgba(255,93,93,.4); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
