@@ -1,10 +1,17 @@
 import React from "react";
 import axios from "axios";
 
-function UserList({ users, fetchUsers }) {
+function UserList({ users, fetchUsers, showToast }) {
   const handleDelete = async (id) => {
-    await axios.delete(`http://localhost:5000/users/${id}`);
-    fetchUsers();
+    if (!window.confirm("Bạn có chắc muốn xóa người dùng này không?")) return;
+    try {
+      await axios.delete(`http://localhost:5000/users/${id}`);
+      fetchUsers();
+      showToast("🗑️ Đã xóa người dùng");
+    } catch (err) {
+      showToast("❌ Lỗi khi xóa người dùng", false);
+      console.error(err);
+    }
   };
 
   const handleEdit = async (id) => {
@@ -17,25 +24,57 @@ function UserList({ users, fetchUsers }) {
         name: newName,
         email: newEmail,
       });
-      alert("✅ Cập nhật thành công!");
+      showToast("✏️ Cập nhật thành công!");
       fetchUsers();
     } catch (err) {
-      console.error("❌ Lỗi khi cập nhật:", err);
-      alert("❌ Không thể cập nhật (kiểm tra id hoặc server)!");
+      showToast("❌ Lỗi khi cập nhật người dùng", false);
+      console.error(err);
     }
   };
 
   return (
     <div>
-      <ul>
-        {users.map((user) => (
-          <li key={user._id}>
-            {user.name} - {user.email}{" "}
-            <button onClick={() => handleEdit(user._id)}>✏️ Sửa</button>
-            <button onClick={() => handleDelete(user._id)}>🗑️ Xóa</button>
-          </li>
-        ))}
-      </ul>
+      <div className="toolbar">
+        <h3>Danh sách người dùng ({users.length})</h3>
+        <div className="badge">Tổng {users.length}</div>
+      </div>
+
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Tên</th>
+            <th>Email</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((u) => (
+            <tr key={u._id}>
+              <td>{u.name}</td>
+              <td>{u.email}</td>
+              <td>
+                <button className="btn btn-ghost" onClick={() => handleEdit(u._id)}>
+                  ✏️ Sửa
+                </button>
+                <button
+                  className="btn btn-danger"
+                  style={{ marginLeft: "6px" }}
+                  onClick={() => handleDelete(u._id)}
+                >
+                  🗑️ Xóa
+                </button>
+              </td>
+            </tr>
+          ))}
+          {users.length === 0 && (
+            <tr>
+              <td colSpan="3" style={{ textAlign: "center", color: "var(--muted)" }}>
+                Không có người dùng nào.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
