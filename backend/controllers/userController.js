@@ -18,7 +18,7 @@ exports.createUser = async (req, res) => {
     res.status(400).json({ message: 'Error creating user', error: err.message });
   }
 };
-//PUT and DELETE
+
 exports.updateUser = async (req, res) => {
   const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (!updatedUser) return res.status(404).json({ message: "User not found" });
