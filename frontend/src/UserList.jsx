@@ -6,7 +6,7 @@ function UserList({ users, fetchUsers }) {
     await axios.delete(`http://localhost:5000/users/${id}`);
     fetchUsers();
   };
-
+// Thêm hàm handleEdit để chỉnh sửa người dùng
   const handleEdit = async (id) => {
     const newName = prompt("Nhập tên mới:");
     const newEmail = prompt("Nhập email mới:");

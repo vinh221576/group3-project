@@ -12,7 +12,7 @@ function App() {
   };
 
   useEffect(() => { fetchUsers(); }, []);
-
+  // Thêm dấu gạch chéo đóng ngoặc ở đây
   return (
     <div>
       <h2>Danh sách người dùng</h2>

@@ -10,7 +10,7 @@ function AddUser({ fetchUsers }) {
     await axios.post("http://localhost:5000/users", { name, email });
     setName("");
     setEmail("");
-    fetchUsers(); 
+    fetchUsers(); //` Gọi lại hàm fetchUsers để cập nhật danh sách người dùng
   };
 
   return (
