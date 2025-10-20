@@ -21,7 +21,11 @@ function App() {
     fetchUsers();
   }, []);
 
-  // Hiển thị thông báo ngắn
+
+  // Hiển thị thông báo
+
+  // Backend làm hoạt động 9
+
   const showToast = (msg, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 2500);
