@@ -21,7 +21,7 @@ function App() {
     fetchUsers();
   }, []);
 
-  // Hiển thị thông báo ngắn
+  // Hiển thị thông báo
   const showToast = (msg, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 2500);
