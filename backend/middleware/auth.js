@@ -4,7 +4,7 @@ const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization') ? req.header('Authorization').split(' ')[1] : null;
   if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
   try {
-    const decoded = jwt.verify(token, 'vinh_ngan_tuan');//tự nhập thì phair // Thay 'your_jwt_secret' trong .env
+    const decoded = jwt.verify(token, 'your_jwt_secret'); // Thay 'your_jwt_secret' trong .env
     req.user = decoded;
     next();
   } catch (err) {
