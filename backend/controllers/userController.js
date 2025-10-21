@@ -1,31 +1,40 @@
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-exports.getUsers = async (req, res) => {
+exports.signup = async (req, res) => {
   try {
-    const users = await User.find();
-    res.json(users);
+    const { name, email, password } = req.body;
+    let user = await User.findOne({ email });
+    if (user) return res.status(400).json({ message: 'User already exists' });
+    user = new User({ name, email, password });
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    await user.save();
+    const payload = { id: user.id, role: user.role };
+    const token = jwt.sign(payload, 'your_jwt_secret', { expiresIn: '1h' });
+    res.json({ token });
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching users', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-exports.createUser = async (req, res) => {
+exports.login = async (req, res) => {
   try {
-    const newUser = new User(req.body);
-    await newUser.save();
-    res.status(201).json(newUser);
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    const payload = { id: user.id, role: user.role };
+    const token = jwt.sign(payload, 'your_jwt_secret', { expiresIn: '1h' });
+    res.json({ token });
   } catch (err) {
-    res.status(400).json({ message: 'Error creating user', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
-//===========Thêm các hàm cập nhật và xóa người dùng===========
-exports.updateUser = async (req, res) => {
-  const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  if (!updatedUser) return res.status(404).json({ message: "User not found" });
-  res.json(updatedUser);
-};
 
-exports.deleteUser = async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ message: "User deleted" });
+// Logout không cần API backend vì xóa token client-side, nhưng có thể thêm nếu cần
+exports.logout = (req, res) => {
+  res.json({ message: 'Logout successful' });
 };
