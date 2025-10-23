@@ -12,8 +12,8 @@ exports.signup = async (req, res) => {
     user.password = await bcrypt.hash(password, salt);
     await user.save();
     const payload = { id: user.id, role: user.role };
-    const token = jwt.sign(payload, 'vinh_ngan_tuan', { expiresIn: '1h' });
-    res.json({ token });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }); 
+    res.json({ token });
   } catch (err) {
     res.status(500).json({ message: 'Server lỗi' });
   }
@@ -27,8 +27,8 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Thông tin xác thực không hợp lệ' });
     const payload = { id: user.id, role: user.role };
-    const token = jwt.sign(payload, 'vinh_ngan_tuan', { expiresIn: '1h' });
-    res.json({ token });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }); 
+    res.json({ token });
   } catch (err) {
     res.status(500).json({ message: 'Server lỗi' });
   }
