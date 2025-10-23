@@ -15,3 +15,4 @@ router.get('/users', authMiddleware, adminMiddleware, userController.getUsers);
 router.delete('/users/:id', authMiddleware, adminMiddleware, userController.deleteUser);
 
 module.exports = router;
+
