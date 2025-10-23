@@ -6,9 +6,7 @@ const userRoutes = require('./routes/user');
 const app = express();
 
 app.use('/users', userRoutes);
-
 dotenv.config();
-
 app.use(cors()); // Cho phép frontend gọi API
 app.use(express.json()); // Parse body JSON
 
