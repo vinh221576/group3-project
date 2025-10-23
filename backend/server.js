@@ -19,10 +19,10 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-.then(() => console.log('✅ Connected to MongoDB Atlas'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+.then(() => console.log('✅ Đã kết nối đến MongoDB Atlas'))
+.catch(err => console.error('❌ MongoDB kết nối lỗi:', err));
 
 // DÒNG DƯ THỪA ĐÃ ĐƯỢC XÓA BỎ: app.use('/', userRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server đang chạy trên port ${PORT}`));
