@@ -13,4 +13,6 @@ router.put('/profile', authMiddleware, userController.updateProfile);
 // Chcứ năng ấy danh sách và xóa người dùng của Admin routes
 router.get('/users', authMiddleware, adminMiddleware, userController.getUsers);
 router.delete('/users/:id', authMiddleware, adminMiddleware, userController.deleteUser);
+
 module.exports = router;
+
