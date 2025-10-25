@@ -69,7 +69,7 @@ exports.getUsers = async (req, res) => {
     const users = await User.find().select('-password');
     res.json(users);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server lỗi' });
   }
 };
 
@@ -82,3 +82,17 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+exports.deleteSelf = async (req, res) => {
+  try {
+    // Sử dụng ID được trích xuất từ JWT token (req.user.id)
+    const user = await User.findByIdAndDelete(req.user.id); 
+
+    if (!user) {
+        return res.status(404).json({ message: 'Không tìm thấy tài khoản để xóa.' });
+    }
+
+    res.json({ message: 'Tài khoản của bạn đã được xóa thành công!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server lỗi' });
+  }
+};
