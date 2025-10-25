@@ -5,7 +5,7 @@ const authMiddleware = (req, res, next) => {
 
   // 1. Kiểm tra header và định dạng Bearer
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token or invalid format, authorization denied' });
+    return res.status(401).json({ message: 'Không có token thông báo hoặc định dạng không hợp lệ, ủy quyền bị từ chối' });
   }
 
   // 2. Lấy token
@@ -20,16 +20,17 @@ const authMiddleware = (req, res, next) => {
     
     next();
   } catch (err) {
-    res.status(401).json({ message: 'Token is not valid' });
+    res.status(401).json({ message: 'Token thông báo không hợp lệ' });
   }
 };
 
 const adminMiddleware = (req, res, next) => {
     // Lưu ý: req.user phải chứa thông tin role (được gán trong token lúc đăng nhập)
     if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Access denied: Requires Admin role' });
+        return res.status(403).json({ message: 'Quyền truy cập bị từ chối: Yêu cầu vai trò Admin' });
     }
     next();
 };
 
 module.exports = { authMiddleware, adminMiddleware };
+

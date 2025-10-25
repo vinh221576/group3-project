@@ -44,7 +44,7 @@ exports.getProfile = async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server lỗi' });
   }
 };
 
@@ -59,6 +59,41 @@ exports.updateProfile = async (req, res) => {
     const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password');
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server lỗi' });
+  }
+};
+
+// Chức năng dành cho admin lấy danh sách và xóa người dùng
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Server lỗi' });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Người dùng đã bị xóa!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server lỗi' });
+  }
+};
+
+// Thêm chức năng xóa chính mình cho user(role)
+exports.deleteSelf = async (req, res) => {
+  try {
+    // Sử dụng ID được trích xuất từ JWT token (req.user.id)
+    const user = await User.findByIdAndDelete(req.user.id); 
+
+    if (!user) {
+        return res.status(404).json({ message: 'Không tìm thấy tài khoản để xóa.' });
+    }
+
+    res.json({ message: 'Tài khoản của bạn đã được xóa thành công!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server lỗi' });
   }
 };
