@@ -12,6 +12,7 @@ router.get('/logout', userController.logout); // Optional
 // Them chuc nang lay va cap nhat profile
 router.get('/profile', authMiddleware, userController.getProfile);
 router.put('/profile', authMiddleware, userController.updateProfile);
+//Thêm chức năng xóa chính mình cho user(role)
 router.delete('/profile', authMiddleware, userController.deleteSelf); 
 
 // Chcứ năng ấy danh sách và xóa người dùng của Admin routes

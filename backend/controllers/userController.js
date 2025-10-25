@@ -82,6 +82,7 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+// Thêm chức năng xóa chính mình cho user(role)
 exports.deleteSelf = async (req, res) => {
   try {
     // Sử dụng ID được trích xuất từ JWT token (req.user.id)
