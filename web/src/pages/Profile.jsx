@@ -1,154 +1,212 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom"; // ✅ điều hướng nội bộ
-import "./Profile.css"; // CSS thuần bạn đã tạo
+import React, { useState, useEffect } from "react"
+import axios from "axios"
+import { useNavigate } from "react-router-dom"
+import "./Profile.css"
 
 export default function Profile() {
-  const [user, setUser] = useState(null);
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState({ type: "", text: "" });
-  const navigate = useNavigate(); // ✅ dùng navigate để điều hướng
+  const [user, setUser] = useState(null)
+  const [name, setName] = useState("")
+  const [password, setPassword] = useState("")
+  const [msg, setMsg] = useState({ type: "", text: "" })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token")
+    if (!token) return navigate("/login", { replace: true })
 
-    // Nếu chưa đăng nhập → quay lại login
-    if (!token) {
-      navigate("/login", { replace: true });
-      return;
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setUser(res.data)
+        setName(res.data.name)
+      } catch {
+        localStorage.removeItem("token")
+        navigate("/login", { replace: true })
+      } finally {
+        setLoading(false)
+      }
     }
 
-    const fetchMe = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(res.data || {});
-        setName(res.data?.name || "");
-        setLoading(false);
-      } catch (err) {
-        // Token hết hạn hoặc lỗi xác thực → đăng xuất
-        localStorage.removeItem("token");
-        navigate("/login", { replace: true });
-      }
-    };
+    fetchProfile()
+  }, [navigate])
 
-    fetchMe();
-  }, [navigate]);
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setMsg({ type: "", text: "" });
-
+  // ✅ Upload avatar
+  const handleUploadAvatar = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    setMsg({ type: "", text: "" })
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.put(
-        "http://localhost:5000/profile",
-        { name, password },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setUser(res.data);
-      setMsg({ type: "success", text: "Cập nhật thành công!" });
-      setPassword("");
+      const token = localStorage.getItem("token")
+      const formData = new FormData()
+      formData.append("avatar", file)
+
+      const res = await axios.post("http://localhost:5000/users/upload-avatar", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      setUser((prev) => ({ ...prev, avatar: res.data.avatar }))
+      setMsg({ type: "success", text: res.data.message })
     } catch (err) {
       setMsg({
         type: "error",
-        text: err?.response?.data?.msg || "Cập nhật thất bại.",
-      });
+        text: "❌ " + (err.response?.data?.message || "Tải ảnh thất bại"),
+      })
     } finally {
-      setSaving(false);
+      setUploading(false)
+      setTimeout(() => setMsg({ type: "", text: "" }), 2500)
     }
-  };
+  }
+
+  // ✅ Cập nhật tên / mật khẩu
+  const handleUpdate = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setMsg({ type: "", text: "" })
+
+    if (!password && name === user.name) {
+      setMsg({ type: "error", text: "⚠️ Bạn chưa thay đổi thông tin nào!" })
+      setSaving(false)
+      return
+    }
+
+    const updateData = {}
+    if (name && name !== user.name) updateData.name = name
+    if (password && password.trim() !== "") updateData.password = password
+
+    try {
+      const token = localStorage.getItem("token")
+      const res = await axios.put("http://localhost:5000/users/profile", updateData, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      setUser(res.data)
+      setMsg({ type: "success", text: "✅ Cập nhật thành công!" })
+      setPassword("")
+    } catch (err) {
+      setMsg({
+        type: "error",
+        text: "❌ Cập nhật thất bại: " + (err.response?.data?.message || ""),
+      })
+    } finally {
+      setSaving(false)
+      setTimeout(() => setMsg({ type: "", text: "" }), 2500)
+    }
+  }
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login", { replace: true }); // ✅ chuyển về login
-  };
+    localStorage.removeItem("token")
+    navigate("/login", { replace: true })
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("⚠️ Bạn chắc chắn muốn xóa tài khoản này?")) return
+    setDeleting(true)
+    try {
+      const token = localStorage.getItem("token")
+      await axios.delete("http://localhost:5000/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      localStorage.removeItem("token")
+      setMsg({ type: "success", text: "✅ Tài khoản đã được xóa!" })
+      setTimeout(() => navigate("/signup", { replace: true }), 2000)
+    } catch {
+      setMsg({ type: "error", text: "❌ Xóa thất bại!" })
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="profile-page">
-      <div className="profile-container">
-        <header className="profile-header">
-          <div className="avatar">{user?.name?.[0]?.toUpperCase() || "U"}</div>
-          <div>
-            <h1>Hồ sơ người dùng</h1>
-            <p>Quản lý thông tin và bảo mật tài khoản</p>
-          </div>
-        </header>
+      <div className="profile-card">
+        {/* 🖼️ Ảnh nền */}
+        <div className="profile-banner">
+          <img
+            src="https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1000&q=80"
+            alt="banner"
+            className="banner-img"
+          />
+        </div>
 
-        <div className="profile-body">
-          <section className="profile-info">
-            <h2>Thông tin hiện tại</h2>
-            {loading ? (
-              <p className="loading">Đang tải...</p>
+        {/* 🧍 Avatar */}
+        <div className="avatar-section">
+          <div className="avatar-wrapper">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="avatar" className="avatar-img" />
             ) : (
-              <>
-                <div className="info-item">
-                  <label>Tên</label>
-                  <p>{user?.name || "—"}</p>
-                </div>
-                <div className="info-item">
-                  <label>Email</label>
-                  <p>{user?.email || "—"}</p>
-                </div>
-              </>
+              <div className="avatar-placeholder">
+                {user?.name?.[0]?.toUpperCase() || "U"}
+              </div>
             )}
-          </section>
+          </div>
 
-          <section className="profile-form">
-            <h2>Cập nhật thông tin</h2>
+          <h2 className="user-name">{user?.name || "Người dùng"}</h2>
 
-            {msg.text && (
-              <div className={`message ${msg.type}`}>{msg.text}</div>
-            )}
+          <label htmlFor="avatar-upload" className="upload-btn">
+            {uploading ? "Đang tải..." : "📸 Chọn ảnh mới"}
+          </label>
+          <input
+            id="avatar-upload"
+            type="file"
+            accept="image/*"
+            onChange={handleUploadAvatar}
+            hidden
+          />
+        </div>
 
-            <form onSubmit={handleUpdate}>
-              <div className="form-group">
-                <label htmlFor="name">Tên mới</label>
-                <input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Nhập tên hiển thị mới"
-                />
-              </div>
+        <h1 className="profile-title">Hồ sơ cá nhân</h1>
+        <p className="profile-sub">Quản lý thông tin và bảo mật tài khoản</p>
 
-              <div className="form-group">
-                <label htmlFor="password">Mật khẩu mới</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Để trống nếu không đổi"
-                />
-                <small>Mật khẩu tối thiểu 6 ký tự.</small>
-              </div>
+        {msg.text && <div className={`message ${msg.type}`}>{msg.text}</div>}
 
-              <div className="button-group">
-                <button type="submit" disabled={saving}>
-                  {saving ? "Đang cập nhật..." : "Cập nhật"}
-                </button>
-                <button
-                  type="button"
-                  className="logout"
-                  onClick={handleLogout}
-                >
-                  Đăng xuất
-                </button>
-              </div>
-            </form>
-          </section>
+        <form className="profile-form" onSubmit={handleUpdate}>
+          <label>Tên hiển thị mới</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nhập tên mới..."
+          />
+
+          <label>Mật khẩu mới</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Để trống nếu không đổi"
+          />
+
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? "Đang cập nhật..." : "Cập nhật"}
+          </button>
+        </form>
+
+        <div className="button-group">
+          <button className="btn-logout" onClick={handleLogout}>
+            Đăng xuất
+          </button>
+          <button
+            className="btn-danger"
+            onClick={handleDeleteAccount}
+            disabled={deleting}
+          >
+            {deleting ? "Đang xóa..." : "Xóa tài khoản"}
+          </button>
         </div>
 
         <footer className="profile-footer">
-          © {new Date().getFullYear()} Group 3 — Authentication Module
+          © {new Date().getFullYear()} Group 3
         </footer>
       </div>
     </div>
-  );
+  )
 }

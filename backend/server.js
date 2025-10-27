@@ -5,7 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// ************** BẮT ĐẦU CẤU HÌNH **************
+// ************** BẮT ĐẦU CẤU HÌNH ************
 
 // 1. Thêm thư viện Cloudinary và Multer
 const cloudinary = require('cloudinary').v2;
