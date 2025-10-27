@@ -6,7 +6,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    // Lấy từ localStorage khi F5
+    // Lấy từ localStorage khi F5  ////
     const raw = localStorage.getItem("currentUser");
     if (raw) {
       try { setCurrentUser(JSON.parse(raw)); } catch {}
