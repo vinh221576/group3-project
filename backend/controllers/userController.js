@@ -153,7 +153,7 @@ exports.forgotPassword = async (req, res) => {
         subject: 'Yêu cầu Đặt lại Mật khẩu',
         text: `Bạn nhận được email này vì bạn (hoặc người khác) đã yêu cầu đặt lại mật khẩu cho tài khoản của bạn.\n\n` +
               `Vui lòng nhấp vào liên kết sau hoặc dán nó vào trình duyệt của bạn để hoàn tất quá trình:\n\n` +
-              `http://localhost:5173/reset-password?token=${token}\n\n` +
+              `http://localhost:5173/reset?token=${token}\n\n` +
               `Nếu bạn không yêu cầu điều này, vui lòng bỏ qua email này và mật khẩu của bạn sẽ không thay đổi.`
     };
     
