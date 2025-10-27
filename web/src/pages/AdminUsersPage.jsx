@@ -1,81 +1,94 @@
 // web/src/pages/AdminUsersPage.jsx
-import React, { useEffect, useMemo, useState } from "react"
-import { api } from "../api"
-import "./AdminUsersPage.css"
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../api";
+import "./AdminUsersPage.css";
 
 export default function AdminUsersPage() {
-  const [q, setQ] = useState({ search: "", page: 1, limit: 10, sort: "createdAt:-1" })
-  const [data, setData] = useState({ items: [], page: 1, pages: 1, total: 0 })
-  const [loading, setLoading] = useState(false)
-  const [err, setErr] = useState("")
-  const [msg, setMsg] = useState({ text: "", type: "" }) // thông báo
+  const [q, setQ] = useState({ search: "", page: 1, limit: 10, sort: "createdAt:-1" });
+  const [data, setData] = useState({ items: [], page: 1, pages: 1, total: 0 });
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [msg, setMsg] = useState({ text: "", type: "" });
+  const navigate = useNavigate();
+
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
   const queryStr = useMemo(() => {
-    const p = new URLSearchParams()
-    if (q.search) p.set("search", q.search)
-    p.set("page", q.page)
-    p.set("limit", q.limit)
-    p.set("sort", q.sort)
-    return p.toString()
-  }, [q])
+    const p = new URLSearchParams();
+    if (q.search) p.set("search", q.search);
+    p.set("page", q.page);
+    p.set("limit", q.limit);
+    p.set("sort", q.sort);
+    return p.toString();
+  }, [q]);
 
   useEffect(() => {
-    let ignore = false
-    ;(async () => {
-      setLoading(true)
-      setErr("")
+    let ignore = false;
+    (async () => {
+      setLoading(true);
+      setErr("");
       try {
-        const res = await api.get(`/users?${queryStr}`)
+        const res = await api.get(`/users?${queryStr}`);
         const body = Array.isArray(res.data)
           ? { items: res.data, total: res.data.length, page: 1, pages: 1 }
-          : res.data
-        if (!ignore) setData(body)
+          : res.data;
+        if (!ignore) setData(body);
       } catch (e) {
         if (!ignore)
-          setErr(e.response?.data?.message || "Không tải được danh sách")
+          setErr(e.response?.data?.message || "Không tải được danh sách");
       } finally {
-        if (!ignore) setLoading(false)
+        if (!ignore) setLoading(false);
       }
-    })()
+    })();
     return () => {
-      ignore = true
-    }
-  }, [queryStr])
+      ignore = true;
+    };
+  }, [queryStr]);
 
+  // ✅ Xử lý xóa user
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return
+    if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return;
     try {
-      await api.delete(`/users/${id}`)
+      await api.delete(`/users/${id}`);
       setData((prev) => ({
         ...prev,
         items: prev.items.filter((u) => u._id !== id),
         total: prev.total - 1,
-      }))
-      setMsg({ text: "✅ Đã xóa người dùng thành công", type: "success" })
-      setTimeout(() => setMsg({ text: "", type: "" }), 2500)
+      }));
+      setMsg({ text: "✅ Đã xóa người dùng thành công", type: "success" });
+      setTimeout(() => setMsg({ text: "", type: "" }), 2500);
     } catch (e) {
       setMsg({
-        text:
-          "❌ Xóa thất bại: " +
-          (e.response?.data?.message || "Lỗi không xác định"),
+        text: "❌ Xóa thất bại: " + (e.response?.data?.message || "Lỗi không xác định"),
         type: "error",
-      })
-      setTimeout(() => setMsg({ text: "", type: "" }), 3000)
+      });
+      setTimeout(() => setMsg({ text: "", type: "" }), 3000);
     }
-  }
+  };
+
+  // ✅ Nút đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="admin-page">
       <div className="card">
-        {msg.text && (
-          <div className={`msg ${msg.type}`}>{msg.text}</div>
-        )}
+        {/* Thông báo */}
+        {msg.text && <div className={`msg ${msg.type}`}>{msg.text}</div>}
 
+        {/* Header */}
         <div className="admin-header">
-          <h1>Quản lý người dùng</h1>
-          <span className="muted small">Tổng: {data.total || 0}</span>
+          <div className="header-left">
+            <h1>Quản lý người dùng</h1>
+            <span className="muted">Tổng: {data.total || 0}</span>
+          </div>
         </div>
 
+        {/* Thanh tìm kiếm + nút đăng xuất */}
         <div className="toolbar">
           <input
             className="input"
@@ -86,9 +99,7 @@ export default function AdminUsersPage() {
           <select
             className="select"
             value={q.limit}
-            onChange={(e) =>
-              setQ({ ...q, limit: Number(e.target.value), page: 1 })
-            }
+            onChange={(e) => setQ({ ...q, limit: Number(e.target.value), page: 1 })}
           >
             {[5, 10, 20, 50].map((n) => (
               <option key={n} value={n}>
@@ -96,8 +107,14 @@ export default function AdminUsersPage() {
               </option>
             ))}
           </select>
+
+          {/* 👉 Nút đăng xuất ngắn như nút Xóa */}
+          <button className="btn-logout toolbar-logout" onClick={handleLogout}>
+            Đăng xuất
+          </button>
         </div>
 
+        {/* Bảng danh sách */}
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -110,23 +127,11 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="cell-center">
-                    Đang tải…
-                  </td>
-                </tr>
+                <tr><td colSpan={4} className="cell-center">Đang tải…</td></tr>
               ) : err ? (
-                <tr>
-                  <td colSpan={4} className="cell-error">
-                    {err}
-                  </td>
-                </tr>
+                <tr><td colSpan={4} className="cell-error">{err}</td></tr>
               ) : data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="cell-center">
-                    Trống
-                  </td>
-                </tr>
+                <tr><td colSpan={4} className="cell-center">Trống</td></tr>
               ) : (
                 data.items.map((u) => (
                   <tr key={u._id}>
@@ -134,20 +139,20 @@ export default function AdminUsersPage() {
                     <td>{u.email}</td>
                     <td>
                       <span
-                        className={`badge ${
-                          u.role === "admin" ? "badge-admin" : "badge-user"
-                        }`}
+                        className={`badge ${u.role === "admin" ? "badge-admin" : "badge-user"}`}
                       >
                         {u.role}
                       </span>
                     </td>
                     <td className="right">
-                      <button
-                        className="btn-danger"
-                        onClick={() => handleDelete(u._id)}
-                      >
-                        Xóa
-                      </button>
+                      {u.role !== "admin" && (
+                        <button
+                          className="btn-danger"
+                          onClick={() => handleDelete(u._id)}
+                        >
+                          Xóa
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -156,6 +161,7 @@ export default function AdminUsersPage() {
           </table>
         </div>
 
+        {/* Footer */}
         <div className="footer">
           <div>
             Trang <b>{data.page || 1}</b>/<b>{data.pages || 1}</b>
@@ -164,5 +170,5 @@ export default function AdminUsersPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
