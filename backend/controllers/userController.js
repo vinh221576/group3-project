@@ -42,40 +42,44 @@ exports.signup = async (req, res) => {
   }
 };
 
+// controllers/userController.js - Sửa exports.login
+
 exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body
-    const user = await User.findOne({ email })
-    if (!user)
-      return res.status(400).json({ message: "Thông tin xác thực không hợp lệ" })
+    try {
+        const { email, password } = req.body
+        const user = await User.findOne({ email })
+        if (!user)
+            return res.status(400).json({ message: "Thông tin xác thực không hợp lệ" })
+        const isMatch = await bcrypt.compare(password, user.password)
+        if (!isMatch)
+            return res.status(400).json({ message: "Thông tin xác thực không hợp lệ" })
+        
+        // Nếu user chưa có role thì mặc định là "user"
+        if (!user.role) user.role = "user"
+        
+        // Access Token
+        const payload = { id: user.id, role: user.role }
+        const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" })
 
-    const isMatch = await bcrypt.compare(password, user.password)
-    if (!isMatch)
-      return res.status(400).json({ message: "Thông tin xác thực không hợp lệ" })
-
-    // Nếu user chưa có role thì mặc định là "user"
-    if (!user.role) user.role = "user"
-
-    // Access Token (Giữ nguyên)
-    const payload = { id: user.id, role: user.role }
-    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" })
-
-    // ✅ Trả lại cả token và thông tin user
-    res.json({
-      message: "Đăng nhập thành công!",
-      accessToken, // Đổi tên biến để rõ ràng hơn
-      refreshToken, // THÊM REFRESH TOKEN
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    })
-  } catch (err) {
-    console.error("Lỗi đăng nhập:", err)
-    res.status(500).json({ message: "Server lỗi khi đăng nhập" })
-  }
+        // 🟢 KHẮC PHỤC LỖI: Gọi và gán Refresh Token
+        const refreshToken = await createRefreshToken(user._id); // Dùng hàm đã định nghĩa ở trên
+        
+        // Trả lại cả token và thông tin user
+        res.json({
+            message: "Đăng nhập thành công!",
+            accessToken,
+            refreshToken, // Biến này giờ đã có giá trị
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            },
+        })
+    } catch (err) {
+        console.error("Lỗi đăng nhập:", err)
+        res.status(500).json({ message: "Server lỗi khi đăng nhập" })
+    }
 }
 
 // Sửa exports.logout để xóa Refresh Token khỏi DB (Revoke)
