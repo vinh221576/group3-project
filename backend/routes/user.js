@@ -11,11 +11,6 @@ const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // Phải khớp với thư mục Multer đã được cấu hình
 router.post('/upload-avatar', upload.single('avatar'), authMiddleware, userController.uploadAvatar);
 
-// 1. TẠO LẠI MULTER TẠI ĐÂY để nó có thể được sử dụng
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // Phải khớp với thư mục Multer đã được cấu hình
-router.post('/upload-avatar', upload.single('avatar'), authMiddleware, userController.uploadAvatar);
-
 router.post('/signup', userController.signup);
 router.post('/login', userController.login);
 router.get('/logout', userController.logout); // Optional
