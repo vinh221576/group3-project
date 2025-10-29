@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
+const sharp = require('sharp'); // Import thư viện sharp để hổ trợ xử lý ảnh
 
 // Thêm vào userController.js
 const RefreshToken = require('../models/RefreshToken'); // Import model mới
@@ -217,29 +218,39 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+// Sửa exports.uploadAvatar
 exports.uploadAvatar = async (req, res) => {
-  try {
-    // Kiểm tra xem file đã được upload bởi multer chưa
-    if (!req.file) {
-      return res.status(400).json({ message: 'Vui lòng chọn file avatar.' });
-    }
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Vui lòng chọn file avatar.' });
+        }
 
-    // 1. Upload file lên Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'group3-avatars', // Thư mục lưu trữ trên Cloudinary
-        resource_type: 'image'
-    });
+        const filePath = req.file.path;
 
-    // 2. Cập nhật URL avatar vào database
-    const user = await User.findById(req.user.id);
-    user.avatar = result.secure_url;
-    await user.save();
+        // 1. Dùng Sharp để resize ảnh
+        const resizedImagePath = filePath + '_resized.jpg';
+        await sharp(filePath)
+            .resize(200, 200) // Resize thành 200x200
+            .toFormat('jpeg')
+            .jpeg({ quality: 90 })
+            .toFile(resizedImagePath);
 
-    // 3. Xóa file tạm thời trên server cục bộ
-    fs.unlinkSync(req.file.path); 
-    
-    res.json({ avatar: result.secure_url, message: 'Upload avatar thành công!' });
-  } catch (err) {
+        // 2. Upload file ĐÃ RESIZE lên Cloudinary
+        const result = await cloudinary.uploader.upload(resizedImagePath, {
+            folder: 'group3-avatars', 
+            resource_type: 'image'
+        });
+
+        // 3. Cập nhật URL avatar và Xóa file tạm thời
+        const user = await User.findById(req.user.id);
+        user.avatar = result.secure_url;
+        await user.save();
+        
+        fs.unlinkSync(filePath); // Xóa file gốc
+        fs.unlinkSync(resizedImagePath); // Xóa file đã resize
+
+        res.json({ avatar: result.secure_url, message: 'Upload avatar thành công!' });
+    } catch (err) {
     // Nếu có lỗi, đảm bảo file tạm thời vẫn bị xóa
     if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
