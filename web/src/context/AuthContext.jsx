@@ -7,21 +7,21 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // Lấy từ localStorage khi F5
-    const raw = localStorage.getItem("currentUser");
+    const raw = localStorage.getItem("user");
     if (raw) {
       try { setCurrentUser(JSON.parse(raw)); } catch {}
     }
   }, []);
 
   const login = (user, token) => {
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    localStorage.setItem("accessToken", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("token", token);
     setCurrentUser(user);
   };
 
   const logout = () => {
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     setCurrentUser(null);
     window.location.href = "/login";
   };

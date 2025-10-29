@@ -12,3 +12,4 @@ router.post('/refresh-token', userController.refreshToken);
 router.post('/logout', userController.logout); // SỬA NẾU CẦN GỬI BODY
 
 module.exports = router;
+

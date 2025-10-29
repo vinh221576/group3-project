@@ -56,5 +56,3 @@ const checkRole = (roles) => (req, res, next) => {
     next();
 };
 
-module.exports = { authMiddleware, checkRole }; // Thay adminMiddleware bằng checkRole
-// module.exports = { authMiddleware, adminMiddleware };

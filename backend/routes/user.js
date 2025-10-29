@@ -11,6 +11,11 @@ const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); // Phải khớp với thư mục Multer đã được cấu hình
 router.post('/upload-avatar', upload.single('avatar'), authMiddleware, userController.uploadAvatar);
 
+// 1. TẠO LẠI MULTER TẠI ĐÂY để nó có thể được sử dụng
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // Phải khớp với thư mục Multer đã được cấu hình
+router.post('/upload-avatar', upload.single('avatar'), authMiddleware, userController.uploadAvatar);
+
 router.post('/signup', userController.signup);
 router.post('/login', userController.login);
 router.get('/logout', userController.logout); // Optional
@@ -33,6 +38,16 @@ router.delete('/:id', authMiddleware, checkRole('admin'), userController.deleteU
 // THÊM: API Cập nhật vai trò (Chỉ Admin được làm)
 // SV1 THÊM API này vào controller
 router.put('/update-role/:id', authMiddleware, checkRole('admin'), userController.updateUserRole);
+
+// TÍNH NĂNG FORGOT/RESET PASSWORD (Không cần authMiddleware)
+router.post('/forgot-password', userController.forgotPassword);
+router.put('/reset/:token', userController.resetPassword);
+
+// TÍNH NĂNG REFRESH TOKEN
+router.post('/refresh-token', userController.refreshToken); 
+// Cần SỬA router.get('/logout', ...) thành router.post('/logout', ...) 
+// để có thể gửi Refresh Token trong body (nếu cần)
+router.post('/logout', userController.logout); // SỬA NẾU CẦN GỬI BODY
 
 // TÍNH NĂNG FORGOT/RESET PASSWORD (Không cần authMiddleware)
 router.post('/forgot-password', userController.forgotPassword);

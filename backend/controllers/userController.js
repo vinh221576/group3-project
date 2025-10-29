@@ -286,38 +286,3 @@ exports.refreshToken = async (req, res) => {
         res.status(500).json({ message: "Server lỗi khi Refresh Token" });
     }
 };
-
-// controllers/userController.js - THMÊ CHỨC NNĂG UPDATE VAI TRÒ NGƯỜI DÙNG
-
-exports.updateUserRole = async (req, res) => {
-    try {
-        const { role } = req.body;
-        const userId = req.params.id;
-
-        // Đảm bảo vai trò được gửi lên hợp lệ (Optional: Thêm kiểm tra enum ở đây)
-        if (!['user', 'admin', 'moderator'].includes(role)) {
-            return res.status(400).json({ message: 'Vai trò không hợp lệ.' });
-        }
-
-        // Không cho Admin tự hạ cấp chính mình (ngăn ngừa lock-out)
-        if (req.user.id === userId && role !== 'admin') {
-             return res.status(403).json({ message: 'Không được tự thay đổi vai trò Admin của chính mình.' });
-        }
-
-        const user = await User.findByIdAndUpdate(
-            userId, 
-            { role: role }, 
-            { new: true, runValidators: true }
-        ).select('-password');
-
-        if (!user) {
-            return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
-        }
-
-        res.json({ message: `Cập nhật vai trò thành ${role} thành công.`, user: user });
-
-    } catch (err) {
-        console.error("Lỗi cập nhật vai trò:", err);
-        res.status(500).json({ message: 'Server lỗi khi cập nhật vai trò.' });
-    }
-};

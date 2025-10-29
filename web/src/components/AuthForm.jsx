@@ -1,10 +1,11 @@
-"use client"
+//"use client"
 
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { api } from "../api.js"
 import { Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import "./AuthForm.css"
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function AuthForm({ mode = "login" }) {
   const [form, setForm] = useState({ name: "", email: "", password: "" })
@@ -13,6 +14,7 @@ export default function AuthForm({ mode = "login" }) {
   const [msg, setMsg] = useState("")
   const [msgType, setMsgType] = useState("") // "success" | "error"
   const navigate = useNavigate()
+  const { login } = useAuth(); // <== THÊM DÒNG NÀY
 
   const title = mode === "login" ? "Đăng nhập" : "Tạo tài khoản"
   const subtitle =
