@@ -24,12 +24,35 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-const adminMiddleware = (req, res, next) => {
-    // Lưu ý: req.user phải chứa thông tin role (được gán trong token lúc đăng nhập)
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Quyền truy cập bị từ chối: Yêu cầu vai trò Admin' });
+// const adminMiddleware = (req, res, next) => {
+//     // Lưu ý: req.user phải chứa thông tin role (được gán trong token lúc đăng nhập)
+//     if (req.user.role !== 'admin') {
+//         return res.status(403).json({ message: 'Quyền truy cập bị từ chối: Yêu cầu vai trò Admin' });
+//     }
+//     next();
+// };
+
+// middleware/auth.js - THAY THẾ adminMiddleware
+
+// THÊM MIDDLEWARE checkRole MỚI
+/**
+ * Middleware kiểm tra vai trò người dùng
+ * @param {string|string[]} roles - Vai trò được phép (ví dụ: 'admin' hoặc ['admin', 'moderator'])
+ */
+const checkRole = (roles) => (req, res, next) => {
+    // Chuyển roles thành mảng nếu nó là chuỗi đơn
+    const requiredRoles = Array.isArray(roles) ? roles : [roles];
+    
+    // Đảm bảo req.user.role đã được gán bởi authMiddleware
+    if (!req.user || !req.user.role) {
+        return res.status(403).json({ message: 'Quyền truy cập bị từ chối: Thiếu thông tin vai trò' });
     }
+
+    // Kiểm tra xem role của user có nằm trong danh sách requiredRoles không
+    if (!requiredRoles.includes(req.user.role)) {
+        return res.status(403).json({ message: `Quyền truy cập bị từ chối: Yêu cầu một trong các vai trò: ${requiredRoles.join(', ')}` });
+    }
+
     next();
 };
 
-module.exports = { authMiddleware, adminMiddleware };

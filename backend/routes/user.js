@@ -3,7 +3,8 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 
 // SỬA DÒNG NÀY: Giờ đã lấy cả authMiddleware và adminMiddleware
-const { authMiddleware, adminMiddleware } = require('../middleware/auth'); 
+// const { authMiddleware, adminMiddleware } = require('../middleware/auth'); 
+const { authMiddleware, checkRole } = require('../middleware/auth');
 
 // 1. TẠO LẠI MULTER TẠI ĐÂY để nó có thể được sử dụng
 const multer = require('multer');
@@ -21,8 +22,27 @@ router.put('/profile', authMiddleware, userController.updateProfile);
 router.delete('/profile', authMiddleware, userController.deleteSelf); 
 
 // Chcứ năng ấy danh sách và xóa người dùng của Admin routes
-router.get('/', authMiddleware, adminMiddleware, userController.getUsers);
-router.delete('/:id', authMiddleware, adminMiddleware, userController.deleteUser);
+// router.get('/', authMiddleware, adminMiddleware, userController.getUsers);
+// router.delete('/:id', authMiddleware, adminMiddleware, userController.deleteUser);
+
+// Chức năng lấy danh sách và xóa người dùng của Admin routes
+// Chỉ Admin được xem danh sách users
+router.get('/', authMiddleware, checkRole('admin'), userController.getUsers); 
+// Chỉ Admin được xóa users
+router.delete('/:id', authMiddleware, checkRole('admin'), userController.deleteUser);
+// THÊM: API Cập nhật vai trò (Chỉ Admin được làm)
+// SV1 THÊM API này vào controller
+router.put('/update-role/:id', authMiddleware, checkRole('admin'), userController.updateUserRole);
+
+// TÍNH NĂNG FORGOT/RESET PASSWORD (Không cần authMiddleware)
+router.post('/forgot-password', userController.forgotPassword);
+router.put('/reset/:token', userController.resetPassword);
+
+// TÍNH NĂNG REFRESH TOKEN
+router.post('/refresh-token', userController.refreshToken); 
+// Cần SỬA router.get('/logout', ...) thành router.post('/logout', ...) 
+// để có thể gửi Refresh Token trong body (nếu cần)
+router.post('/logout', userController.logout); // SỬA NẾU CẦN GỬI BODY
 
 // TÍNH NĂNG FORGOT/RESET PASSWORD (Không cần authMiddleware)
 router.post('/forgot-password', userController.forgotPassword);

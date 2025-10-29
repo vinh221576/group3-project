@@ -14,7 +14,7 @@ export default function AuthForm({ mode = "login" }) {
   const [msgType, setMsgType] = useState("") // "success" | "error"
   const navigate = useNavigate()
   const { login } = useAuth(); // <== THÊM DÒNG NÀY
-  
+
   const title = mode === "login" ? "Đăng nhập" : "Tạo tài khoản"
   const subtitle =
     mode === "login" ? "Chào mừng bạn trở lại 👋" : "Bắt đầu hành trình mới ✨"
