@@ -5,6 +5,7 @@ const userController = require('../controllers/userController');
 // SỬA DÒNG NÀY: Giờ đã lấy cả authMiddleware và adminMiddleware
 // const { authMiddleware, adminMiddleware } = require('../middleware/auth'); 
 const { authMiddleware, checkRole } = require('../middleware/auth');
+const Log = require("../models/Log");
 const { logActivity} = require('../middleware/logger');
 const { loginLimiter } = require('../middleware/rateLimiter');
 
@@ -56,3 +57,23 @@ router.delete('/:id', authMiddleware, checkRole('admin'), logActivity('DELETE_US
 router.post('/login', loginLimiter, userController.login); // Áp dụng rate limiter cho login
 
 module.exports = router;
+
+router.get("/logs", authMiddleware, async (req, res) => {
+  try {
+    // 🔹 Chỉ admin được phép xem
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Không có quyền truy cập logs" });
+    }
+
+    // 🔹 Lấy tất cả logs, join với User
+    const logs = await Log.find()
+      .populate("userId", "name email")
+      .sort({ timestamp: -1 })
+      .limit(100);
+
+    res.json(logs);
+  } catch (error) {
+    console.error("Lỗi khi lấy logs:", error.message);
+    res.status(500).json({ message: "Lỗi server khi tải logs" });
+  }
+});
