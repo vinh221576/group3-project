@@ -35,6 +35,7 @@ const userRoutes = require('./routes/user');
 // MIDDLEWARE (PHẢI TRƯỚC ROUTES)
 app.use(cors()); // Cho phép frontend gọi API
 app.use(express.json()); // Parse body JSON
+app.use(express.urlencoded({ extended: true }));
 
 // DÒNG ĐỊNH TUYẾN CHÍNH: Tất cả user routes bắt đầu bằng /users
 app.use('/users', userRoutes); 
