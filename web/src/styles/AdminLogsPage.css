@@ -1,0 +1,54 @@
+.logs-page {
+  max-width: 900px;
+  margin: 40px auto;
+  background: #111827;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(59,130,246,0.3);
+  color: #e5e7eb;
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logs-header h1 {
+  color: #60a5fa;
+}
+
+.btn-back {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-back:hover {
+  background-color: #1d4ed8;
+}
+
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.logs-table th, .logs-table td {
+  padding: 12px;
+  border-bottom: 1px solid #374151;
+}
+.logs-table th {
+  background-color: #1f2937;
+}
+.center {
+  text-align: center;
+  color: #9ca3af;
+}
+.loading, .error {
+  text-align: center;
+  margin-top: 20px;
+}
+.error { color: #f87171; }

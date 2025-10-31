@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
-import axios from "axios"
+import api from "../api.js"
 import { useNavigate } from "react-router-dom"
-import "./Profile.css"
+import "../styles/Profile.css"
 
 export default function Profile() {
   const [user, setUser] = useState(null)
@@ -15,12 +15,12 @@ export default function Profile() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("accessToken")
     if (!token) return navigate("/login", { replace: true })
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/users/profile", {
+        const res = await api.get("/profile", {
           headers: { Authorization: `Bearer ${token}` },
         })
         setUser(res.data)
@@ -47,7 +47,7 @@ export default function Profile() {
       const formData = new FormData()
       formData.append("avatar", file)
 
-      const res = await axios.post("http://localhost:5000/users/upload-avatar", formData, {
+      const res = await api.post("/upload-avatar", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -84,7 +84,7 @@ export default function Profile() {
 
     try {
       const token = localStorage.getItem("token")
-      const res = await axios.put("http://localhost:5000/users/profile", updateData, {
+      const res = await api.put("/profile", updateData, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
@@ -102,17 +102,29 @@ export default function Profile() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("token")
-    navigate("/login", { replace: true })
+  // ✅ Đăng xuất có gửi refreshToken
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken")
+      await api.post("/logout", { refreshToken }) // ✅ gửi đúng body cho BE
+    } catch (err) {
+      console.error("Logout API error:", err)
+    } finally {
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      localStorage.removeItem("user")
+      localStorage.removeItem("role")
+      navigate("/login", { replace: true })
+    }
   }
 
+  // ✅ Xóa tài khoản
   const handleDeleteAccount = async () => {
     if (!window.confirm("⚠️ Bạn chắc chắn muốn xóa tài khoản này?")) return
     setDeleting(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.delete("http://localhost:5000/users/profile", {
+      await api.delete("/profile", {
         headers: { Authorization: `Bearer ${token}` },
       })
       localStorage.removeItem("token")

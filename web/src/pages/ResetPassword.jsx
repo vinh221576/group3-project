@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import axios from "axios"
 import { useLocation, Link } from "react-router-dom"
-import "./ResetPassword.css"
+import "../styles/ResetPassword.css"
 
 export default function ResetPassword() {
   const [token, setToken] = useState("")

@@ -1,8 +1,8 @@
 // web/src/pages/AdminUsersPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api";
-import "./AdminUsersPage.css";
+import api from "../api";
+import "../styles/AdminUsersPage.css";
 
 export default function AdminUsersPage() {
   const [q, setQ] = useState({ search: "", page: 1, limit: 10, sort: "createdAt:-1" });
@@ -29,7 +29,7 @@ export default function AdminUsersPage() {
       setLoading(true);
       setErr("");
       try {
-        const res = await api.get(`/users?${queryStr}`);
+        const res = await api.get(`/?${queryStr}`);
         const body = Array.isArray(res.data)
           ? { items: res.data, total: res.data.length, page: 1, pages: 1 }
           : res.data;
@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return;
     try {
-      await api.delete(`/users/${id}`);
+      await api.delete(`/${id}`);
       setData((prev) => ({
         ...prev,
         items: prev.items.filter((u) => u._id !== id),
@@ -69,9 +69,15 @@ export default function AdminUsersPage() {
 
   // ✅ Nút đăng xuất
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     navigate("/login", { replace: true });
+  };
+
+  // ✅ Nút xem nhật ký
+  const handleViewLogs = () => {
+    navigate("/admin/logs");
   };
 
   return (
@@ -88,7 +94,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Thanh tìm kiếm + nút đăng xuất */}
+        {/* Thanh công cụ */}
         <div className="toolbar">
           <input
             className="input"
@@ -108,10 +114,15 @@ export default function AdminUsersPage() {
             ))}
           </select>
 
-          {/* 👉 Nút đăng xuất ngắn như nút Xóa */}
-          <button className="btn-logout toolbar-logout" onClick={handleLogout}>
-            Đăng xuất
-          </button>
+          {/* 👉 Nút Xem nhật ký & Đăng xuất */}
+          <div className="toolbar-actions">
+            <button className="btn-logs" onClick={handleViewLogs}>
+              📜 Xem nhật ký
+            </button>
+            <button className="btn-logout" onClick={handleLogout}>
+              Đăng xuất
+            </button>
+          </div>
         </div>
 
         {/* Bảng danh sách */}
@@ -145,7 +156,7 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="right">
-                      {u.role !== "admin" && (
+                      {currentUser?.role === "admin" && u.role !== "admin" && (
                         <button
                           className="btn-danger"
                           onClick={() => handleDelete(u._id)}

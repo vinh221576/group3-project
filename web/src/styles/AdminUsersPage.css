@@ -191,3 +191,33 @@
 .btn-logout:active {
   transform: scale(0.97);
 }
+.toolbar-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-logs {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-logs:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-logout {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-logout:hover {
+  background-color: #dc2626;
+}
