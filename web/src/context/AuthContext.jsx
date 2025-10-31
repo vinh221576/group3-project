@@ -13,15 +13,21 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = (user, token) => {
+  const login = (user, accessToken,refreshToken) => {
+     console.log("🔐 Login context:", user, accessToken);
     localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("token", token);
-    setCurrentUser(user);
+    localStorage.setItem("accessToken", accessToken);
+    if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+    // ✅ thêm dòng này
+    if (user?.role) localStorage.setItem("role", user.role);
+  setCurrentUser(user);
   };
 
   const logout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+     localStorage.removeItem("role"); // ✅ thêm dòng này
     setCurrentUser(null);
     window.location.href = "/login";
   };

@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
+const sharp = require('sharp'); // Import thư viện sharp để hổ trợ xử lý ảnh
 
 // Thêm vào userController.js
 const RefreshToken = require('../models/RefreshToken'); // Import model mới
@@ -82,17 +83,48 @@ exports.login = async (req, res) => {
     }
 }
 
-// Sửa exports.logout để xóa Refresh Token khỏi DB (Revoke)
-exports.logout = async (req, res) => {
-    // Yêu cầu client gửi Refresh Token trong body/header (tùy cấu hình frontend)
-    const { refreshToken } = req.body; 
+// // Sửa exports.logout để xóa Refresh Token khỏi DB (Revoke)
+// exports.logout = async (req, res) => {
+//     // Yêu cầu client gửi Refresh Token trong body/header (tùy cấu hình frontend)
+//     const { refreshToken } = req.body; 
     
-    if (refreshToken) {
-        await RefreshToken.deleteOne({ token: refreshToken });
+//     if (refreshToken) {
+//         await RefreshToken.deleteOne({ token: refreshToken });
+//     }
+
+//     res.json({ message: 'Đăng xuất thành công, token đã bị thu hồi!' });
+// };
+exports.logout = async (req, res) => {
+  try {
+    const refreshToken =
+      req.body?.refreshToken ||
+      req.headers["x-refresh-token"] ||
+      req.query?.token ||
+      null;
+
+    // 🔹 Nếu không có refreshToken => trả lỗi nhẹ, KHÔNG crash server
+    if (!refreshToken) {
+      return res.status(400).json({
+        message: "Thiếu refresh token khi đăng xuất",
+      });
     }
 
-    res.json({ message: 'Đăng xuất thành công, token đã bị thu hồi!' });
+    const tokenDoc = await RefreshToken.findOneAndDelete({ token: refreshToken });
+    if (!tokenDoc) {
+      return res.status(404).json({
+        message: "Token không tồn tại hoặc đã hết hạn",
+      });
+    }
+
+    res.json({ message: "Đăng xuất thành công" });
+  } catch (error) {
+    console.error("Lỗi BE khi logout:", error.message);
+    res.status(500).json({
+      message: "Đăng nhập/đăng xuất quá nhiều lần – Server đang tạm khóa xử lý.",
+    });
+  }
 };
+
 
 exports.getProfile = async (req, res) => {
   try {
@@ -217,29 +249,39 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+// Sửa exports.uploadAvatar
 exports.uploadAvatar = async (req, res) => {
-  try {
-    // Kiểm tra xem file đã được upload bởi multer chưa
-    if (!req.file) {
-      return res.status(400).json({ message: 'Vui lòng chọn file avatar.' });
-    }
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Vui lòng chọn file avatar.' });
+        }
 
-    // 1. Upload file lên Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'group3-avatars', // Thư mục lưu trữ trên Cloudinary
-        resource_type: 'image'
-    });
+        const filePath = req.file.path;
 
-    // 2. Cập nhật URL avatar vào database
-    const user = await User.findById(req.user.id);
-    user.avatar = result.secure_url;
-    await user.save();
+        // 1. Dùng Sharp để resize ảnh
+        const resizedImagePath = filePath + '_resized.jpg';
+        await sharp(filePath)
+            .resize(200, 200) // Resize thành 200x200
+            .toFormat('jpeg')
+            .jpeg({ quality: 90 })
+            .toFile(resizedImagePath);
 
-    // 3. Xóa file tạm thời trên server cục bộ
-    fs.unlinkSync(req.file.path); 
-    
-    res.json({ avatar: result.secure_url, message: 'Upload avatar thành công!' });
-  } catch (err) {
+        // 2. Upload file ĐÃ RESIZE lên Cloudinary
+        const result = await cloudinary.uploader.upload(resizedImagePath, {
+            folder: 'group3-avatars', 
+            resource_type: 'image'
+        });
+
+        // 3. Cập nhật URL avatar và Xóa file tạm thời
+        const user = await User.findById(req.user.id);
+        user.avatar = result.secure_url;
+        await user.save();
+        
+        fs.unlinkSync(filePath); // Xóa file gốc
+        fs.unlinkSync(resizedImagePath); // Xóa file đã resize
+
+        res.json({ avatar: result.secure_url, message: 'Upload avatar thành công!' });
+    } catch (err) {
     // Nếu có lỗi, đảm bảo file tạm thời vẫn bị xóa
     if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -284,5 +326,40 @@ exports.refreshToken = async (req, res) => {
 
     } catch (err) {
         res.status(500).json({ message: "Server lỗi khi Refresh Token" });
+    }
+};
+
+// controllers/userController.js - THMÊ CHỨC NNĂG UPDATE VAI TRÒ NGƯỜI DÙNG
+
+exports.updateUserRole = async (req, res) => {
+    try {
+        const { role } = req.body;
+        const userId = req.params.id;
+
+        // Đảm bảo vai trò được gửi lên hợp lệ (Optional: Thêm kiểm tra enum ở đây)
+        if (!['user', 'admin', 'moderator'].includes(role)) {
+            return res.status(400).json({ message: 'Vai trò không hợp lệ.' });
+        }
+
+        // Không cho Admin tự hạ cấp chính mình (ngăn ngừa lock-out)
+        if (req.user.id === userId && role !== 'admin') {
+             return res.status(403).json({ message: 'Không được tự thay đổi vai trò Admin của chính mình.' });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId, 
+            { role: role }, 
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+        }
+
+        res.json({ message: `Cập nhật vai trò thành ${role} thành công.`, user: user });
+
+    } catch (err) {
+        console.error("Lỗi cập nhật vai trò:", err);
+        res.status(500).json({ message: 'Server lỗi khi cập nhật vai trò.' });
     }
 };

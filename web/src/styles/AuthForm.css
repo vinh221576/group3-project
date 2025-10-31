@@ -1,0 +1,274 @@
+/* ========== Tổng thể ========== */
+.auth-page {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #1e293b, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 16px;
+  box-sizing: border-box;
+  color: #fff;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 36px 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.auth-card:hover {
+  box-shadow: 0 10px 28px rgba(6, 182, 212, 0.2);
+}
+
+/* ========== Header ========== */
+.auth-header .auth-logo {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0 auto 16px;
+}
+
+.auth-header h1 {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.auth-header p {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin-bottom: 24px;
+}
+
+/* ========== Form & Input ========== */
+.auth-form .form-group {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.auth-form label {
+  display: block;
+  font-size: 14px;
+  color: #e2e8f0;
+  margin-bottom: 6px;
+}
+
+/* 🌈 Input có hiệu ứng sáng khi hover/focus */
+.auth-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 0 rgba(56, 189, 248, 0);
+}
+
+.auth-form input:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.auth-form input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6),
+    inset 0 0 10px rgba(56, 189, 248, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ========== Password field ========== */
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-eye {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.toggle-eye:hover {
+  color: #fff;
+}
+
+/* ========== Thông báo message ========== */
+.message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.message.success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.message.error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ========== Nút Submit với Shine Effect ========== */
+.submit-btn {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  color: white;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+.submit-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0)
+  );
+  transform: skewX(-25deg);
+  transition: 0.5s;
+}
+
+.submit-btn:hover::before {
+  left: 130%;
+}
+
+.submit-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.6);
+}
+
+.submit-btn:disabled {
+  background: linear-gradient(to right, #1e3a8a, #164e63);
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ========== Loading Icon ========== */
+.spin {
+  animation: spin 0.9s linear infinite;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========== Liên kết & Text nhỏ ========== */
+.toggle-text {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin-top: 18px;
+}
+
+.link {
+  color: #38bdf8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ========== Footer ========== */
+.auth-footer {
+  margin-top: 32px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.after-success {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.after-success .link {
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.after-success .link:hover {
+  text-decoration: underline;
+}
+
+/* ========== Link Quên mật khẩu ========== */
+.forgot-link {
+  text-align: right;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.forgot-link .link {
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+.forgot-link .link:hover {
+  text-decoration: underline;
+}
+/* 🔒 Khung hiển thị khi bị tạm khóa đăng nhập */
+.lockout-card {
+  background-color: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  padding: 24px;
+  border-radius: 10px;
+  color: #fca5a5;
+  text-align: center;
+  margin-top: 20px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.lockout-card h2 {
+  color: #ef4444;
+  margin-bottom: 8px;
+}
+
+.lockout-card b {
+  color: #facc15;
+}

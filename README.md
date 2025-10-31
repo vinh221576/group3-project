@@ -1,34 +1,16 @@
-# Group 3 Project: Ứng dụng Quản lý Người dùng
+# React + Vite
 
-## Hướng dẫn Cài đặt và Chạy Dự án
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-### Yêu cầu Hệ thống
-- Node.js (phiên bản 16.x hoặc cao hơn): [Tải tại đây](https://nodejs.org/)
-- Git: [Tải tại đây](https://git-scm.com/)
+Currently, two official plugins are available:
 
-### Bước 1: Tải Dự án từ GitHub
-1. Mở terminal (Command Prompt, PowerShell, hoặc Git Bash).
-2. Clone dự án:
-    git clone https://github.com/vinh221576/group3-project.git
-    cd group3-project
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-### Bước 2: Cài đặt Backend
-1. Di chuyển đến thư mục backend: cd backend
-2. Cài đặt các package: npm install
-   - Nếu lỗi, chạy:
-       npm cache clean --force
-       npm install
-3. Chạy backend: npm start
-4. Tạo khung terminal khác, chuyển sang thư mục web: cd web
-5. Cài đặt các package: npm install
-6. Chạy ứng dụng: npm run dev
-7. Tổ hợp phimd Ctrl + Click chuột vào đường dẫn: http://localhost:5173/
-8. Login tài khoản và mật khẩu admin:
-   email: admin@gamil.com
-   password: admin123
-9. Signup tài khoản mới với role mặc định là user:
-10. Đăng nhập bằng tài khoản đã đăng ký.
+## React Compiler
 
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
+## Expanding the ESLint configuration
 
-
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
