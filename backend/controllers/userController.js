@@ -102,6 +102,12 @@ exports.logout = async (req, res) => {
       req.query?.token ||
       null;
 
+        if (refreshToken) {
+        await RefreshToken.deleteOne({ token: refreshToken });
+    }
+
+    res.json({ message: "Đăng xuất thành công, token đã bị thu hồi." });
+
     // 🔹 Nếu không có refreshToken => trả lỗi nhẹ, KHÔNG crash server
     if (!refreshToken) {
       return res.status(400).json({
@@ -109,14 +115,13 @@ exports.logout = async (req, res) => {
       });
     }
 
-    const tokenDoc = await RefreshToken.findOneAndDelete({ token: refreshToken });
+    const tokenDoc = await RefreshToken.findByIdAndDelete({ token: refreshToken });
     if (!tokenDoc) {
       return res.status(404).json({
         message: "Token không tồn tại hoặc đã hết hạn",
       });
     }
-
-    res.json({ message: "Đăng xuất thành công" });
+    
   } catch (error) {
     console.error("Lỗi BE khi logout:", error.message);
     res.status(500).json({
