@@ -24,9 +24,9 @@ export default function Profile() {
           headers: { Authorization: `Bearer ${token}` },
         })
         setUser(res.data)
-        setName(res.data.name)
+        setName(res.data.name || ""); //Ní Ngạn bỏ sót cái này r, sai cái display textbox name
       } catch {
-        localStorage.removeItem("token")
+        localStorage.removeItem("accessToken")
         navigate("/login", { replace: true })
       } finally {
         setLoading(false)
@@ -43,10 +43,9 @@ export default function Profile() {
     setUploading(true)
     setMsg({ type: "", text: "" })
     try {
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("accessToken")
       const formData = new FormData()
       formData.append("avatar", file)
-
       const res = await api.post("/upload-avatar", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -66,7 +65,7 @@ export default function Profile() {
     }
   }
 
-  // ✅ Cập nhật tên / mật khẩu
+  // ✅ Cập nhật thông tin cá nhân
   const handleUpdate = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -83,13 +82,13 @@ export default function Profile() {
     if (password && password.trim() !== "") updateData.password = password
 
     try {
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("accessToken")
       const res = await api.put("/profile", updateData, {
         headers: { Authorization: `Bearer ${token}` },
       })
-
       setUser(res.data)
       setMsg({ type: "success", text: "✅ Cập nhật thành công!" })
+      setName(res.data.name || "")
       setPassword("")
     } catch (err) {
       setMsg({
@@ -102,18 +101,41 @@ export default function Profile() {
     }
   }
 
-  // ✅ Đăng xuất có gửi refreshToken
+  // ✅ Đăng xuất có đếm số lần
   const handleLogout = async () => {
     try {
       const refreshToken = localStorage.getItem("refreshToken")
-      await api.post("/logout", { refreshToken }) // ✅ gửi đúng body cho BE
+      await api.post("/logout", { refreshToken })
+
+      const count = Number(localStorage.getItem("logoutCount") || 0) + 1
+      localStorage.setItem("logoutCount", count)
+
+      // Nếu vượt 5 lần → khóa login 1 phút
+      if (count >= 5) {
+        const lockTime = Date.now() + 60 * 1000
+        localStorage.setItem("lockUntil", lockTime)
+        localStorage.setItem("logoutCount", 0)
+        console.warn("🚫 Tạm khóa đăng nhập 1 phút do đăng nhập/đăng xuất quá nhiều lần.")
+      }
+
+      setMsg({ type: "success", text: "✅ Đăng xuất thành công." })
     } catch (err) {
       console.error("Logout API error:", err)
+      setMsg({ type: "error", text: "❌ Lỗi khi đăng xuất." })
     } finally {
+      // ❗ Không dùng clear() — chỉ xóa token
+      const lockUntil = localStorage.getItem("lockUntil")
+      const logoutCount = localStorage.getItem("logoutCount")
+
       localStorage.removeItem("accessToken")
       localStorage.removeItem("refreshToken")
       localStorage.removeItem("user")
       localStorage.removeItem("role")
+
+      if (lockUntil) localStorage.setItem("lockUntil", lockUntil)
+      if (logoutCount) localStorage.setItem("logoutCount", logoutCount)
+
+        localStorage.clear()
       navigate("/login", { replace: true })
     }
   }
@@ -123,11 +145,11 @@ export default function Profile() {
     if (!window.confirm("⚠️ Bạn chắc chắn muốn xóa tài khoản này?")) return
     setDeleting(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("accessToken")
       await api.delete("/profile", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      localStorage.removeItem("token")
+      localStorage.clear()
       setMsg({ type: "success", text: "✅ Tài khoản đã được xóa!" })
       setTimeout(() => navigate("/signup", { replace: true }), 2000)
     } catch {
@@ -137,10 +159,28 @@ export default function Profile() {
     }
   }
 
+  if (loading) return <div className="loading">Đang tải...</div>
+
   return (
     <div className="profile-page">
+      {/* 🔹 Nếu role là moderator thì hiển thị thanh menu */}
+      {user?.role === "moderator" && (
+        <nav className="admin-navbar">
+          <div className="nav-left"><h2>🛡️ Moderator</h2></div>
+          <div className="nav-right">
+            <button className="nav-btn active">Hồ sơ cá nhân</button>
+            <button className="nav-btn" onClick={() => navigate("/moderator")}>
+              Danh sách người dùng
+            </button>
+            <button className="nav-btn logout" onClick={handleLogout}>
+              Đăng xuất
+            </button>
+          </div>
+        </nav>
+      )}
+
       <div className="profile-card">
-        {/* 🖼️ Ảnh nền */}
+        {/* 🖼️ Banner */}
         <div className="profile-banner">
           <img
             src="https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1000&q=80"
@@ -215,9 +255,7 @@ export default function Profile() {
           </button>
         </div>
 
-        <footer className="profile-footer">
-          © {new Date().getFullYear()} Group 3
-        </footer>
+        <footer className="profile-footer">© {new Date().getFullYear()} Group 3</footer>
       </div>
     </div>
   )
