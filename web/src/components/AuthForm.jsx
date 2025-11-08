@@ -1,147 +1,194 @@
-// "use client"
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import api from "../api.js"
-import { Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from "lucide-react"
-import "../styles/AuthForm.css"
-import { useAuth } from "../context/AuthContext.jsx"
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../redux/authSlice";
+import { Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import "../styles/AuthForm.css";
+import api from "../api";
 
 export default function AuthForm({ mode = "login" }) {
-  const [form, setForm] = useState({ name: "", email: "", password: "" })
-  const [showPwd, setShowPwd] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState("")
-  const [msgType, setMsgType] = useState("") // "success" | "error" | "lockout"
-  const navigate = useNavigate()
-  const { login } = useAuth()
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [showPwd, setShowPwd] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
+  const { loading } = useSelector((s) => s.auth);
 
-  // 🕒 Cooldown state
-  const [cooldown, setCooldown] = useState(0)
-  const [intervalId, setIntervalId] = useState(null)
+  const [msg, setMsg] = useState("");
+  const [msgType, setMsgType] = useState(""); // success | error | lockout
+  const [cooldown, setCooldown] = useState(0);
+  const [intervalId, setIntervalId] = useState(null);
 
-  // 🧮 Bộ đếm tạm cho 2 tình huống
-  const [loginLogoutCount, setLoginLogoutCount] = useState(0)
-  const [wrongPwdCount, setWrongPwdCount] = useState(0)
+  const title = mode === "login" ? "Đăng nhập" : "Tạo tài khoản";
+  const subtitle = mode === "login" ? "Chào mừng bạn trở lại 👋" : "Bắt đầu hành trình mới ✨";
+  const buttonText = mode === "login" ? "Đăng nhập" : "Đăng ký";
 
-  const title = mode === "login" ? "Đăng nhập" : "Tạo tài khoản"
-  const subtitle =
-    mode === "login" ? "Chào mừng bạn trở lại 👋" : "Bắt đầu hành trình mới ✨"
-  const buttonText = mode === "login" ? "Đăng nhập" : "Đăng ký"
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
-
-  // ⏳ Hàm đếm ngược + tự động về login
+  // 🕒 Đếm ngược cooldown
   const startCooldown = (seconds) => {
-    setCooldown(seconds)
-    if (intervalId) clearInterval(intervalId)
+    setCooldown(seconds);
+    if (intervalId) clearInterval(intervalId);
     const id = setInterval(() => {
       setCooldown((prev) => {
         if (prev <= 1) {
-          clearInterval(id)
-          setMsg("")
-          setMsgType("")
-          setCooldown(0)
-          window.location.href = "/login" // ✅ tự động quay lại login
-          return 0
+          clearInterval(id);
+          localStorage.removeItem("lockUntil");
+          setMsg("");
+          setMsgType("");
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
-    setIntervalId(id)
-  }
+        return prev - 1;
+      });
+    }, 1000);
+    setIntervalId(id);
+  };
 
+  // 🔍 Kiểm tra nếu bị khóa và reset form khi tải trang
+  useEffect(() => {
+    setForm({ name: "", email: "", password: "" }); // Reset form khi tải trang
+    const lockUntil = localStorage.getItem("lockUntil");
+    const logoutCount = Number(localStorage.getItem("logoutCount") || 0);
+
+    if (lockUntil && Date.now() < Number(lockUntil)) {
+      const remaining = Math.ceil((Number(lockUntil) - Date.now()) / 1000);
+      setMsg(`🚫 Tài khoản đang bị tạm khóa. Thử lại sau ${remaining}s.`);
+      setMsgType("lockout");
+      startCooldown(remaining);
+      return;
+    }
+
+    if (logoutCount >= 5) {
+      const lockTime = Date.now() + 60 * 1000;
+      localStorage.setItem("lockUntil", lockTime);
+      localStorage.setItem("logoutCount", 0);
+      setMsg("⚠️ Đăng nhập / đăng xuất quá nhiều lần. Tạm khóa 1 phút.");
+      setMsgType("lockout");
+      startCooldown(60);
+    }
+  }, [location.pathname]); // Reset khi thay đổi pathname
+
+  // ===========================================================
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setMsg("")
-    setMsgType("")
+    e.preventDefault();
+    setMsg("");
+    setMsgType("");
 
+    const lockUntil = localStorage.getItem("lockUntil");
+    if (lockUntil && Date.now() < Number(lockUntil)) {
+      const remaining = Math.ceil((Number(lockUntil) - Date.now()) / 1000);
+      setMsg(`⚠️ Bạn đang bị tạm khóa. Thử lại sau ${remaining}s.`);
+      setMsgType("lockout");
+      startCooldown(remaining);
+      return;
+    }
+
+    // ---------------- Đăng ký ----------------
+    if (mode === "signup") {
+      try {
+        await api.post("/signup", form);
+        setMsg("✅ Đăng ký thành công! Vui lòng đăng nhập.");
+        setMsgType("success");
+        setForm({ name: "", email: "", password: "" }); // Reset form sau thành công
+      } catch (err) {
+        setMsg(err.response?.data?.message || "Đăng ký thất bại.");
+        setMsgType("error");
+      }
+      return;
+    }
+
+    // ---------------- Đăng nhập ----------------
     try {
-      if (mode === "signup") {
-        await api.post("/signup", form)
-        setMsg("✅ Đăng ký thành công! Vui lòng đăng nhập.")
-        setMsgType("success")
-        setForm({ name: "", email: "", password: "" })
-      } else {
-        const res = await api.post("/login", {
-          email: form.email,
-          password: form.password,
-        })
+      const result = await dispatch(loginUser(form));
+      const payload = result.payload;
+      const status =
+        result.error?.status ||
+        result.payload?.status ||
+        result?.meta?.status ||
+        result?.error?.response?.status ||
+        200;
+      const message =
+        payload?.message?.toLowerCase?.() ||
+        result.error?.message?.toLowerCase?.() ||
+        "";
 
-        if (!res.data?.accessToken || !res.data?.refreshToken) {
-          setMsg("Không nhận được token, vui lòng thử lại.")
-          setMsgType("error")
-          return
-        }
+      // 🟢 Đăng nhập thành công
+      if (result.meta.requestStatus === "fulfilled") {
+        localStorage.removeItem("lockUntil");
+        localStorage.removeItem("failCount");
 
-        login(res.data.user, res.data.accessToken, res.data.refreshToken)
-        setMsg("Đăng nhập thành công! 🎉")
-        setMsgType("success")
-
-        // ✅ Reset lại bộ đếm khi đăng nhập thành công
-        setWrongPwdCount(0)
-        setLoginLogoutCount(0)
+        setMsg("🎉 Đăng nhập thành công!");
+        setMsgType("success");
 
         setTimeout(() => {
-          if (res.data.user.role === "admin") {
-            navigate("/admin/users", { replace: true })
-          } else {
-            navigate("/profile", { replace: true })
-          }
-        }, 300)
+          const role = payload.user.role;
+          if (role === "admin") navigate("/admin/users");
+          else if (role === "moderator") navigate("/moderator");
+          else navigate("/profile");
+        }, 500);
+        return;
       }
+
+      // ❌ Nếu backend báo lỗi (400 / 429)
+      if (status === 400 || status === 429 || message.includes("too many")) {
+        const count = Number(localStorage.getItem("failCount") || 0) + 1;
+        localStorage.setItem("failCount", count);
+
+        if (count >= 5) {
+          const lockTime = Date.now() + 60 * 1000;
+          localStorage.setItem("lockUntil", lockTime);
+          localStorage.setItem("failCount", 0);
+          setMsg("⚠️ Nhập sai mật khẩu quá nhiều lần. Tạm khóa 1 phút.");
+          setMsgType("lockout");
+          startCooldown(60);
+          return;
+        }
+
+        setMsg("❌ Mật khẩu hoặc email không đúng. Thử lại.");
+        setMsgType("error");
+        return;
+      }
+
+      throw new Error("Đăng nhập thất bại.");
     } catch (err) {
-      console.error("Auth error:", err)
-      const message = err.response?.data?.message || "⚠️ Bạn đã đăng nhập/đăng xuất quá nhiều lần. Hãy thử lại sau 1 phút."
-      const status = err.response?.status
+      const status =
+        err?.response?.status ||
+        err?.error?.response?.status ||
+        err?.status ||
+        err?.error?.status ||
+        400;
+      const message =
+        err?.response?.data?.message ||
+        err?.error?.response?.data?.message ||
+        err?.message ||
+        "Đăng nhập thất bại";
 
-      // 🔹 Trường hợp 1: Nhập sai mật khẩu nhiều lần
-      if (status === 400 && message.toLowerCase().includes("xác thực")) {
-        setWrongPwdCount((prev) => prev + 1)
-        if (wrongPwdCount + 1 >= 5) {
-          setMsg("⚠️ Nhập sai mật khẩu quá nhiều lần. Tài khoản tạm bị khóa 1 phút.")
-          setMsgType("lockout")
-          startCooldown(60)
-          setWrongPwdCount(0)
-          return
+      console.warn("Auth error:", message, "| status:", status);
+
+      // ⚠️ Sai mật khẩu
+      if (status === 400 || message.toLowerCase().includes("xác thực")) {
+        const failCount = Number(localStorage.getItem("failCount") || 0) + 1;
+        localStorage.setItem("failCount", failCount);
+        if (failCount >= 5) {
+          const lockTime = Date.now() + 60 * 1000;
+          localStorage.setItem("lockUntil", lockTime);
+          localStorage.setItem("failCount", 0);
+          setMsg("⚠️ Nhập sai mật khẩu quá nhiều lần. Tạm khóa 1 phút.");
+          setMsgType("lockout");
+          startCooldown(60);
+          return;
         }
+        setMsg("❌ Mật khẩu không đúng. Thử lại.");
+        setMsgType("error");
+        return;
       }
 
-      // 🔹 Trường hợp 2: Đăng nhập/đăng xuất nhiều vòng (FE phát hiện)
-      const lowerMsg = message.toLowerCase()
-      if (
-        lowerMsg.includes("đăng xuất") ||
-        lowerMsg.includes("logout") ||
-        lowerMsg.includes("đăng nhập đăng xuất") ||
-        lowerMsg.includes("quá nhiều lần") ||
-        status === 500
-      ) {
-        setLoginLogoutCount((prev) => prev + 1)
-        if (loginLogoutCount + 1 >= 5) {
-          setMsg("⚠️ Bạn đã đăng nhập/đăng xuất quá nhiều lần. Hãy thử lại sau 1 phút.")
-          setMsgType("lockout")
-          startCooldown(60)
-          setLoginLogoutCount(0)
-          return
-        }
-      }
-
-      // 🔹 Lỗi rate limiter thật từ BE
-      if (status === 429 || message.includes("Quá nhiều lần")) {
-        setMsg(message)
-        setMsgType("lockout")
-        startCooldown(60)
-      } else {
-        setMsg(message)
-        setMsgType("error")
-      }
+      setMsg("❌ Đăng nhập thất bại. Thử lại sau ít phút.");
+      setMsgType("error");
     } finally {
-      setLoading(false)
+      setForm({ name: "", email: "", password: "" }); // Reset form sau khi submit
     }
-  }
+  };
 
+  // ===========================================================
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -151,34 +198,26 @@ export default function AuthForm({ mode = "login" }) {
           <p>{subtitle}</p>
         </div>
 
-        {/* ✅ Thông báo */}
         {msg && msgType !== "lockout" && (
           <div className={`message ${msgType}`}>
-            {msgType === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            {msgType === "success" ? (
+              <CheckCircle size={16} />
+            ) : (
+              <AlertCircle size={16} />
+            )}
             <span>{msg}</span>
           </div>
         )}
 
-        {/* 🔒 Giao diện bị khóa */}
-        {msgType === "lockout" && (
+        {msgType === "lockout" ? (
           <div className="lockout-card">
-            <h2>
-              {msg.includes("đăng xuất")
-                ? "🚫 Hoạt động đăng nhập/đăng xuất bị tạm khóa"
-                : "🚫 Đăng nhập bị tạm khóa"}
-            </h2>
+            <h2>🚫 Tạm khóa đăng nhập</h2>
             <p>{msg}</p>
             <p>
-              Thử lại sau:{" "}
-              <b>
-                {Math.floor(cooldown / 60)} phút {cooldown % 60} giây
-              </b>
+              Thử lại sau <b>{cooldown}s</b>
             </p>
           </div>
-        )}
-
-        {/* 🧾 Form */}
-        {msgType !== "lockout" && (
+        ) : (
           <form className="auth-form" onSubmit={handleSubmit}>
             {mode === "signup" && (
               <div className="form-group">
@@ -186,9 +225,8 @@ export default function AuthForm({ mode = "login" }) {
                 <input
                   type="text"
                   name="name"
-                  placeholder="Nhập tên hiển thị..."
                   value={form.name}
-                  onChange={handleChange}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
                 />
               </div>
@@ -199,9 +237,8 @@ export default function AuthForm({ mode = "login" }) {
               <input
                 type="email"
                 name="email"
-                placeholder="Nhập email của bạn..."
                 value={form.email}
-                onChange={handleChange}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
               />
             </div>
@@ -212,9 +249,8 @@ export default function AuthForm({ mode = "login" }) {
                 <input
                   type={showPwd ? "text" : "password"}
                   name="password"
-                  placeholder="Nhập mật khẩu..."
                   value={form.password}
-                  onChange={handleChange}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required
                 />
                 <button
@@ -235,11 +271,15 @@ export default function AuthForm({ mode = "login" }) {
               </div>
             )}
 
-            <button type="submit" className="submit-btn" disabled={loading}>
+            <button
+              type="submit"
+              className="submit-btn"
+              disabled={loading || cooldown > 0}
+            >
               {loading ? (
-                <>
-                  <Loader2 size={16} className="spin" /> Đang xử lý...
-                </>
+                <Loader2 className="spin" />
+              ) : cooldown > 0 ? (
+                `Thử lại sau ${cooldown}s`
               ) : (
                 buttonText
               )}
@@ -247,14 +287,13 @@ export default function AuthForm({ mode = "login" }) {
           </form>
         )}
 
-        {/* 🔁 Chuyển form */}
         {msgType !== "lockout" && (
           <div className="toggle-text">
             {mode === "login" ? (
               <>
                 Chưa có tài khoản?{" "}
                 <Link to="/signup" className="link">
-                  Đăng ký ngay
+                  Đăng ký
                 </Link>
               </>
             ) : (
@@ -268,8 +307,10 @@ export default function AuthForm({ mode = "login" }) {
           </div>
         )}
 
-        <footer className="auth-footer">© {new Date().getFullYear()} Group 3</footer>
+        <footer className="auth-footer">
+          © {new Date().getFullYear()} Group 3
+        </footer>
       </div>
     </div>
-  )
+  );
 }

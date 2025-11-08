@@ -16,7 +16,7 @@ router.post('/upload-avatar', upload.single('avatar'), authMiddleware, userContr
 
 router.post('/signup', userController.signup);
 // router.post('/login', userController.login);
-router.get('/logout', userController.logout); // Optional
+//router.get('/logout', userController.logout); // Optional
 
 // Them chuc nang lay va cap nhat profile
 router.get('/profile', authMiddleware, userController.getProfile);
@@ -31,7 +31,8 @@ router.delete('/profile', authMiddleware, userController.deleteSelf);
 
 // Chức năng lấy danh sách và xóa người dùng của Admin routes
 // Chỉ Admin được xem danh sách users
-router.get('/', authMiddleware, checkRole('admin'), userController.getUsers); 
+//Mới thêm moderator 12:6 1/1/2025
+router.get('/', authMiddleware, checkRole(['admin', 'moderator']), userController.getUsers); 
 // Chỉ Admin được xóa users
 // router.delete('/:id', authMiddleware, checkRole('admin'), userController.deleteUser);
 // THÊM: API Cập nhật vai trò (Chỉ Admin được làm)

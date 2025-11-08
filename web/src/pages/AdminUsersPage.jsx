@@ -1,92 +1,123 @@
-// web/src/pages/AdminUsersPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../api";
-import "../styles/AdminUsersPage.css";
+import React, { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import api from "../api"
+import "../styles/AdminUsersPage.css"
 
 export default function AdminUsersPage() {
-  const [q, setQ] = useState({ search: "", page: 1, limit: 10, sort: "createdAt:-1" });
-  const [data, setData] = useState({ items: [], page: 1, pages: 1, total: 0 });
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const [msg, setMsg] = useState({ text: "", type: "" });
-  const navigate = useNavigate();
-
-  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const [q, setQ] = useState({ search: "", page: 1, limit: 10, sort: "createdAt:-1" })
+  const [data, setData] = useState({ items: [], page: 1, pages: 1, total: 0 })
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState("")
+  const [msg, setMsg] = useState({ text: "", type: "" })
+  const navigate = useNavigate()
+  const currentUser = JSON.parse(localStorage.getItem("user"))
 
   const queryStr = useMemo(() => {
-    const p = new URLSearchParams();
-    if (q.search) p.set("search", q.search);
-    p.set("page", q.page);
-    p.set("limit", q.limit);
-    p.set("sort", q.sort);
-    return p.toString();
-  }, [q]);
+    const p = new URLSearchParams()
+    if (q.search) p.set("search", q.search)
+    p.set("page", q.page)
+    p.set("limit", q.limit)
+    p.set("sort", q.sort)
+    return p.toString()
+  }, [q])
 
   useEffect(() => {
-    let ignore = false;
-    (async () => {
-      setLoading(true);
-      setErr("");
+    let ignore = false
+    ;(async () => {
+      setLoading(true)
+      setErr("")
       try {
-        const res = await api.get(`/?${queryStr}`);
+        const res = await api.get(`/?${queryStr}`)
         const body = Array.isArray(res.data)
           ? { items: res.data, total: res.data.length, page: 1, pages: 1 }
-          : res.data;
-        if (!ignore) setData(body);
+          : res.data
+        if (!ignore) setData(body)
       } catch (e) {
-        if (!ignore)
-          setErr(e.response?.data?.message || "Không tải được danh sách");
+        if (!ignore) setErr(e.response?.data?.message || "Không tải được danh sách")
       } finally {
-        if (!ignore) setLoading(false);
+        if (!ignore) setLoading(false)
       }
-    })();
+    })()
     return () => {
-      ignore = true;
-    };
-  }, [queryStr]);
+      ignore = true
+    }
+  }, [queryStr])
 
-  // ✅ Xử lý xóa user
+  // 🔹 Đăng xuất
+  const handleLogout = () => {
+    localStorage.clear()
+    navigate("/login", { replace: true })
+  }
+
+  const handleViewLogs = () => navigate("/admin/logs")
+  const handleManageUsers = () => navigate("/admin/users")
+
+  // 🔹 Xóa user
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return;
+    if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return
     try {
-      await api.delete(`/${id}`);
+      await api.delete(`/${id}`)
       setData((prev) => ({
         ...prev,
         items: prev.items.filter((u) => u._id !== id),
         total: prev.total - 1,
-      }));
-      setMsg({ text: "✅ Đã xóa người dùng thành công", type: "success" });
-      setTimeout(() => setMsg({ text: "", type: "" }), 2500);
+      }))
+      setMsg({ text: "✅ Đã xóa người dùng thành công", type: "success" })
     } catch (e) {
       setMsg({
         text: "❌ Xóa thất bại: " + (e.response?.data?.message || "Lỗi không xác định"),
         type: "error",
-      });
-      setTimeout(() => setMsg({ text: "", type: "" }), 3000);
+      })
+    } finally {
+      setTimeout(() => setMsg({ text: "", type: "" }), 3000)
     }
-  };
+  }
 
-  // ✅ Nút đăng xuất
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    navigate("/login", { replace: true });
-  };
-
-  // ✅ Nút xem nhật ký
-  const handleViewLogs = () => {
-    navigate("/admin/logs");
-  };
+  // 🔹 Cập nhật Role
+  const handleChangeRole = async (userId, newRole) => {
+    if (!window.confirm(`Bạn có chắc muốn đổi quyền người dùng này thành "${newRole}"?`)) return
+    try {
+      await api.put(`/update-role/${userId}`, { role: newRole })
+      setData((prev) => ({
+        ...prev,
+        items: prev.items.map((u) =>
+          u._id === userId ? { ...u, role: newRole } : u
+        ),
+      }))
+      setMsg({ text: `✅ Đã cập nhật vai trò thành ${newRole}`, type: "success" })
+    } catch (e) {
+      setMsg({
+        text: "❌ Cập nhật thất bại: " + (e.response?.data?.message || "Lỗi không xác định"),
+        type: "error",
+      })
+    } finally {
+      setTimeout(() => setMsg({ text: "", type: "" }), 3000)
+    }
+  }
 
   return (
     <div className="admin-page">
+      {/* 🔹 Thanh menu trên cùng */}
+      <nav className="admin-navbar">
+        <div className="nav-left">
+          <h2>👑 Trang quản trị</h2>
+        </div>
+        <div className="nav-right">
+          <button onClick={handleManageUsers} className="nav-btn active">
+            Quản lý người dùng
+          </button>
+          <button onClick={handleViewLogs} className="nav-btn">
+            Xem nhật ký
+          </button>
+          <button onClick={handleLogout} className="nav-btn logout">
+            Đăng xuất
+          </button>
+        </div>
+      </nav>
+
       <div className="card">
-        {/* Thông báo */}
         {msg.text && <div className={`msg ${msg.type}`}>{msg.text}</div>}
 
-        {/* Header */}
         <div className="admin-header">
           <div className="header-left">
             <h1>Quản lý người dùng</h1>
@@ -94,7 +125,6 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Thanh công cụ */}
         <div className="toolbar">
           <input
             className="input"
@@ -113,19 +143,8 @@ export default function AdminUsersPage() {
               </option>
             ))}
           </select>
-
-          {/* 👉 Nút Xem nhật ký & Đăng xuất */}
-          <div className="toolbar-actions">
-            <button className="btn-logs" onClick={handleViewLogs}>
-              📜 Xem nhật ký
-            </button>
-            <button className="btn-logout" onClick={handleLogout}>
-              Đăng xuất
-            </button>
-          </div>
         </div>
 
-        {/* Bảng danh sách */}
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -146,21 +165,30 @@ export default function AdminUsersPage() {
               ) : (
                 data.items.map((u) => (
                   <tr key={u._id}>
-                    <td className="name">{u.name}</td>
+                    <td>{u.name}</td>
                     <td>{u.email}</td>
                     <td>
-                      <span
-                        className={`badge ${u.role === "admin" ? "badge-admin" : "badge-user"}`}
-                      >
-                        {u.role}
-                      </span>
+                      {currentUser?.id === u._id ? (
+                        <span className={`badge badge-${u.role}`}>
+                          {u.role} (Bạn)
+                        </span>
+                      ) : (
+                        <div className="role-edit">
+                          <select
+                            className={`role-select role-${u.role}`}
+                            value={u.role}
+                            onChange={(e) => handleChangeRole(u._id, e.target.value)}
+                          >
+                            <option value="user">User</option>
+                            <option value="moderator">Moderator</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </div>
+                      )}
                     </td>
                     <td className="right">
                       {currentUser?.role === "admin" && u.role !== "admin" && (
-                        <button
-                          className="btn-danger"
-                          onClick={() => handleDelete(u._id)}
-                        >
+                        <button className="btn-danger" onClick={() => handleDelete(u._id)}>
                           Xóa
                         </button>
                       )}
@@ -172,7 +200,6 @@ export default function AdminUsersPage() {
           </table>
         </div>
 
-        {/* Footer */}
         <div className="footer">
           <div>
             Trang <b>{data.page || 1}</b>/<b>{data.pages || 1}</b>
@@ -181,5 +208,5 @@ export default function AdminUsersPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
