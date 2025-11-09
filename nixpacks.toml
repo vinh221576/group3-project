@@ -1,0 +1,22 @@
+# nixpacks.toml
+# Tên file này phải đặt ở thư mục GỐC của repository.
+# Nó giúp Nixpacks/Railway biết chính xác cách build ứng dụng Node.js của bạn.
+
+# 1. Ép buộc sử dụng ngôn ngữ Node.js
+[phases.setup]
+pkgs = ["nodejs-20_x"] # Sử dụng phiên bản Node.js 20.x
+
+# 2. Chỉ định thư mục chứa code của ứng dụng (backend)
+# Nếu code của bạn nằm trong thư mục tên là 'backend', hãy dùng setting này.
+# Nếu code nằm ở thư mục gốc, hãy xóa phần này.
+[start]
+run = "npm start" # Sử dụng lệnh start đã định nghĩa trong package.json
+
+[build]
+base_directory = "backend" 
+# Nếu code của bạn nằm ở thư mục gốc, HÃY XÓA DÒNG NÀY ĐI.
+
+# 3. Thêm biến môi trường cần thiết trong quá trình build
+# (Thường không cần, nhưng có thể thêm nếu có biến build time đặc biệt)
+# [variables]
+# NODE_ENV = "production"
