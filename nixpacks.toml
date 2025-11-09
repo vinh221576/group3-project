@@ -3,6 +3,7 @@ NODE_VERSION = "20"
 
 [build]
 base_directory = "backend" 
+install = "npm install"
 
 [start]
 run = "npm start"
